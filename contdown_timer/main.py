@@ -51,7 +51,7 @@ if st.button("🔄 Reset Timer"):
 # --- FOOTER ---
 st.markdown("""
     <div class="footer">
-        ⏲️ Built with ❤️ using Streamlit | Made by <b>Mehwish Naz</b> |<br>  © 2025 Countdown Timer App
+        ⏲️ Built with ❤️ using Streamlit | Made by <b>Mehwish Naz</b> <br>  © 2025 Countdown Timer App
     </div>
 """, unsafe_allow_html=True)
 
