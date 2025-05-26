@@ -96,6 +96,6 @@ if st.session_state.success:
 # --- FOOTER ---
 st.markdown("""
     <div class="footer">
-        💻 Made with ❤️ <b> Mehwish Naz </b> using Streamlit | © 2025 Guess The Number Game
+        💻 Made with ❤️  Mehwish Naz using Streamlit | © 2025 Guess The Number Game
     </div>
 """, unsafe_allow_html=True)
