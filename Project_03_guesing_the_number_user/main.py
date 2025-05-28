@@ -1,131 +1,106 @@
 import streamlit as st
 import random
 
-# --------- CONFIG ---------
-st.set_page_config(page_title="Hangman Game", page_icon="🕹️", layout="centered")
+# --- Page Config ---
+st.set_page_config(page_title="🎯 Number Guessing Game", layout="centered")
+# --- TITLE ---
+st.title("🎮 Number Guesing Game!")
+st.write("Choose your move and try to beat the computer!")
 
-# --------- CONSTANTS ---------
-WORD_LIST = ['python', 'hangman', 'streamlit', 'challenge', 'developer', 'interface', 'algorithm']
-MAX_TRIES = 6
-HANGMAN_PICS = [
-    '''
-     +---+
-         |
-         |
-         |
-        ===''', '''
-     +---+
-     O   |
-         |
-         |
-        ===''', '''
-     +---+
-     O   |
-     |   |
-         |
-        ===''', '''
-     +---+
-     O   |
-    /|   |
-         |
-        ===''', '''
-     +---+
-     O   |
-    /|\\  |
-         |
-        ===''', '''
-     +---+
-     O   |
-    /|\\  |
-    /    |
-        ===''', '''
-     +---+
-     O   |
-    /|\\  |
-    / \\  |
-        ==='''
-]
 
-# --------- INIT GAME ---------
-def initialize_game():
-    st.session_state.word = random.choice(WORD_LIST).lower()
-    st.session_state.display = ['_'] * len(st.session_state.word)
-    st.session_state.tries_left = MAX_TRIES
-    st.session_state.guessed_letters = set()
+# --- Custom CSS + Footer ---
+st.markdown("""
+    <style>
+        .stButton > button {
+            background-color: #ff6600;
+            color: white;
+            padding: 0.5em 1em;
+            font-size: 16px;
+        }
+        .footer {
+            margin-top: 3em;
+            padding: 1em;
+            text-align: center;
+            font-size: 0.9em;
+            color: #6c757d;
+            border-top: 1px solid #ddd;
+        }
+        .footer a {
+            color: #ff6600;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- Initialize Session State ---
+def initialize_game(difficulty_level):
+    difficulty_settings = {
+        "Easy (1–50)": (1, 50, 10),
+        "Medium (1–100)": (1, 100, 7),
+        "Hard (1–500)": (1, 500, 5)
+    }
+    low, high, max_attempts = difficulty_settings[difficulty_level]
+    st.session_state.low = low
+    st.session_state.high = high
+    st.session_state.target = random.randint(low, high)
+    st.session_state.attempts = 0
+    st.session_state.max_attempts = max_attempts
+    st.session_state.guess_history = []
     st.session_state.game_over = False
-    st.session_state.won = False
+    st.session_state.difficulty = difficulty_level
 
-def guess_letter(letter):
-    if letter in st.session_state.guessed_letters or st.session_state.game_over:
-        return
+# --- Difficulty Selection ---
+if 'target' not in st.session_state:
+    st.markdown("### 🕹️ Select Difficulty to Start:")
+    difficulty = st.selectbox("Difficulty", ["Easy (1–50)", "Medium (1–100)", "Hard (1–500)"])
+    if st.button("Start Game"):
+        initialize_game(difficulty)
+    st.stop()
 
-    st.session_state.guessed_letters.add(letter)
+# --- Game Title & Info ---
+st.title("🎯 Number Guessing Game")
+st.markdown(f"Guess a number between **{st.session_state.low}** and **{st.session_state.high}**")
+st.markdown(f"🧠 Difficulty: **{st.session_state.difficulty}** | 🔁 Attempts Left: **{st.session_state.max_attempts - st.session_state.attempts}**")
 
-    if letter in st.session_state.word:
-        for idx, char in enumerate(st.session_state.word):
-            if char == letter:
-                st.session_state.display[idx] = letter
-    else:
-        st.session_state.tries_left -= 1
-
-    if '_' not in st.session_state.display:
-        st.session_state.won = True
-        st.session_state.game_over = True
-    elif st.session_state.tries_left == 0:
-        st.session_state.game_over = True
-
-# --------- PAGE HEADER ---------
-st.title("🕹️ Hangman Game")
-st.subheader("A classic word-guessing game built with Streamlit")
-st.markdown("Guess the word one letter at a time. You have 6 tries. Good luck!")
-
-# --------- GAME INIT ---------
-if 'word' not in st.session_state:
-    initialize_game()
-
-# --------- LAYOUT ---------
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    st.text("HANGMAN STATUS")
-    st.code(HANGMAN_PICS[MAX_TRIES - st.session_state.tries_left], language="text")
-
-with col2:
-    st.markdown(f"**Word:** {' '.join(st.session_state.display)}")
-    st.markdown(f"**Guessed Letters:** `{', '.join(sorted(st.session_state.guessed_letters))}`")
-    st.markdown(f"**Tries Left:** `{st.session_state.tries_left}`")
-    st.markdown(f"**Word Length:** {len(st.session_state.word)} letters")
-
-# --------- GUESS INPUT ---------
+# --- User Input ---
 if not st.session_state.game_over:
-    with st.form("guess_form", clear_on_submit=True):
-        letter = st.text_input("Enter a letter:", max_chars=1).lower()
-        submitted = st.form_submit_button("Guess")
-        if submitted:
-            if letter.isalpha() and len(letter) == 1:
-                guess_letter(letter)
-            else:
-                st.warning("Please enter a single alphabetical character.")
+    guess = st.number_input("Enter your guess:", min_value=st.session_state.low,
+                            max_value=st.session_state.high, step=1, key="user_guess")
+    if st.button("Submit Guess"):
+        st.session_state.attempts += 1
+        st.session_state.guess_history.append(guess)
 
-# --------- GAME RESULT ---------
+        if guess < st.session_state.target:
+            st.info("🔼 Too low! Try a higher number.")
+        elif guess > st.session_state.target:
+            st.info("🔽 Too high! Try a lower number.")
+        else:
+            st.success(f"🎉 Correct! The number was **{st.session_state.target}**.")
+            st.balloons()
+            st.session_state.game_over = True
+
+        if st.session_state.attempts >= st.session_state.max_attempts and not st.session_state.game_over:
+            st.session_state.game_over = True
+            st.error(f"❌ Game Over! The number was **{st.session_state.target}**.")
+
+# --- Show Guess History ---
+if st.session_state.attempts > 0:
+    st.markdown("### 📉 Your Guesses:")
+    st.write(st.session_state.guess_history)
+
+# --- Play Again Button ---
 if st.session_state.game_over:
-    if st.session_state.won:
-        st.success(f"🎉 You won! The word was **{st.session_state.word}**.")
-    else:
-        st.error(f"💀 You lost. The word was **{st.session_state.word}**.")
+    if st.button("🔁 Play Again"):
+        initialize_game(st.session_state.difficulty)
 
-    st.button("🔁 Play Again", on_click=initialize_game)
-    
-# --------- FOOTER ---------
-st.markdown("""<hr style="margin-top: 3em; margin-bottom: 1em;">""", unsafe_allow_html=True)
-
-st.markdown(
-    """
-    <div style="text-align: center; color: grey; font-size: 0.9em;">
-        🛠️ Developed with ❤️ using <a href="https://streamlit.io" target="_blank">Streamlit</a><br>
-        © 2025 Hangman Web App · GitHub: <a href="https://github.com/mehwishnaz1603/" target="_blank">View Code</a>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
+# --- Footer ---
+st.markdown("""
+<div class="footer">
+    🛠️ Built by <b> Mehwish Naz </b> ❤️ using <a href="https://streamlit.io" target="_blank">Streamlit</a> |
+    <a href="https://github.com/mehwishnaz1603/" target="_blank">GitHub Repo</a><br>
+    © 2025 Number Guessing Game
+</div>
+""", unsafe_allow_html=True)
